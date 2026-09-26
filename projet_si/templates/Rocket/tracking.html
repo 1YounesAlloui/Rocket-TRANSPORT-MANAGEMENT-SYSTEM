@@ -1,0 +1,143 @@
+{% extends "base.html" %}
+{% block title %}Suivi Expédition | Rocket{% endblock %}
+
+{% block extra_css %}
+<style>
+    .timeline {
+        position: relative;
+        max-width: 800px;
+        margin: 40px auto;
+        padding: 20px;
+    }
+
+    .timeline::after {
+        content: '';
+        position: absolute;
+        width: 6px;
+        background-color: var(--border);
+        top: 0;
+        bottom: 0;
+        left: 31px;
+        border-radius: 3px;
+    }
+
+    .etape {
+        padding: 10px 40px;
+        position: relative;
+        background-color: inherit;
+        width: 100%;
+        box-sizing: border-box;
+    }
+
+    .etape::after {
+        content: '';
+        position: absolute;
+        width: 20px;
+        height: 20px;
+        right: -17px;
+        background-color: var(--card-bg);
+        border: 4px solid var(--primary);
+        top: 15px;
+        border-radius: 50%;
+        z-index: 1;
+        left: 20px;
+    }
+
+    .content-etape {
+        padding: 20px;
+        background: var(--card-bg);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+    }
+
+    .etape-header {
+        display: flex;
+        justify-content: space-between;
+        border-bottom: 1px dashed var(--border);
+        padding-bottom: 10px;
+        margin-bottom: 10px;
+    }
+
+    .status-now {
+        background: var(--primary);
+        color: #0f2a44;
+        padding: 5px 15px;
+        border-radius: 20px;
+        font-weight: bold;
+        font-size: 14px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container" style="padding: 20px 40px;">
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+        <h1>📍 Suivi de l'Expédition #{{ expedition.numero_expedition }}</h1>
+        <span class="status-now">{{ expedition.get_statut_display }}</span>
+    </div>
+
+    <div
+        style="background: var(--card-bg); border: 1px solid var(--border); padding: 20px; border-radius: 12px; margin-top: 20px;">
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px;">
+            <div><small style="color: #888;">CLIENT</small><br><b>{{ expedition.client }}</b></div>
+            <div><small style="color: #888;">DESTINATION</small><br><b>{{ expedition.destination.ville }}</b></div>
+            <div><small style="color: #888;">DATE CRÉATION</small><br><b>{{ expedition.date_creation|date:"d/m/Y H:i"
+                    }}</b></div>
+        </div>
+    </div>
+
+    <!-- UPDATE STATUS FORM (ADMIN ONLY) -->
+    {% if user.role == 'ADMIN' %}
+    <div
+        style="margin-top: 30px; background: rgba(244, 196, 48, 0.05); border: 1px dashed var(--primary); padding: 20px; border-radius: 12px;">
+        <h3>➕ Ajouter une étape de suivi</h3>
+        <form method="POST" style="display: flex; gap: 15px;">
+            {% csrf_token %}
+            <input type="text" name="lieu" placeholder="Lieu (ex: Centre de tri Alger)" required
+                style="flex: 1; padding: 10px; background: rgba(0,0,0,0.2); border: 1px solid var(--border); color: white; border-radius: 6px;">
+            <select name="statut" required
+                style="flex: 1; padding: 10px; background: rgba(0,0,0,0.2); border: 1px solid var(--border); color: white; border-radius: 6px;">
+                {% for code, label in status_choices %}
+                <option value="{{ code }}">{{ label }}</option>
+                {% endfor %}
+            </select>
+            <input type="text" name="commentaire" placeholder="Commentaire..."
+                style="flex: 2; padding: 10px; background: rgba(0,0,0,0.2); border: 1px solid var(--border); color: white; border-radius: 6px;">
+            <button type="submit"
+                style="background: var(--primary); border:none; padding: 10px 20px; border-radius: 6px; font-weight: bold; cursor: pointer;">Mettre
+                à jour</button>
+        </form>
+    </div>
+    {% endif %}
+
+    <div class="timeline">
+        {% for step in expedition.tracking_history.all|dictsortreversed:"date_etape" %}
+        <div class="etape">
+            <div class="content-etape">
+                <div class="etape-header">
+                    <b style="color: var(--primary);">{{ step.statut_etape }}</b>
+                    <small style="color: #888;">{{ step.date_etape|date:"d M Y - H:i" }}</small>
+                </div>
+                <div>📍 {{ step.lieu }}</div>
+                {% if step.commentaire %}
+                <div style="font-size: 13px; color: #aaa; margin-top: 10px; font-style: italic;">"{{ step.commentaire
+                    }}"</div>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+
+        <!-- INITIAL STEP -->
+        <div class="etape">
+            <div class="content-etape">
+                <div class="etape-header">
+                    <b style="color: var(--primary);">Expédition Créée</b>
+                    <small style="color: #888;">{{ expedition.date_creation|date:"d M Y - H:i" }}</small>
+                </div>
+                <div>📍 Système Rocket</div>
+                <div style="font-size: 13px; color: #aaa; margin-top: 10px;">Enregistrement initial du colis.</div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

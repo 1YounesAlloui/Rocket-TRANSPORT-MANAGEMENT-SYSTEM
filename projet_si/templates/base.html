@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <title>{% block title %}Rocket Logistique{% endblock %}</title>
+    <style>
+        :root {
+            --primary: #f4c430;
+            --bg: #0f2a44;
+            --card-bg: rgba(255, 255, 255, 0.05);
+            --border: rgba(255, 255, 255, 0.1);
+            --nav-height: 70px;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background: var(--bg);
+            color: white;
+            font-family: 'Segoe UI', sans-serif;
+            display: flex;
+            flex-direction: column;
+            /* Stack navbar on top of content */
+            min-height: 100vh;
+        }
+
+        /* Top Navbar Style */
+        .navbar {
+            height: var(--nav-height);
+            background: rgba(0, 0, 0, 0.3);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 30px;
+            backdrop-filter: blur(10px);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+            color: var(--primary);
+            text-decoration: none;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 20px;
+            list-style: none;
+            margin: 0;
+            padding: 0;
+        }
+
+        .nav-links a {
+            color: #ccc;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 500;
+            transition: 0.3s;
+            padding: 10px 15px;
+            border-radius: 6px;
+        }
+
+        .nav-links a:hover {
+            color: var(--primary);
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        /* Active link style */
+        .nav-links a.active {
+            color: var(--bg);
+            background: var(--primary);
+        }
+
+        /* Main Content Area */
+        .main-content {
+            flex: 1;
+            padding: 30px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        /* User Profile / Logout section */
+        .user-section {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .btn-logout {
+            font-size: 12px;
+            color: #ff4d4d;
+            text-decoration: none;
+            border: 1px solid #ff4d4d;
+            padding: 5px 10px;
+            border-radius: 4px;
+        }
+    </style>
+    {% block extra_css %}{% endblock %}
+</head>
+
+<body>
+
+    <nav class="navbar">
+        <a href="{% url 'dashboard' %}" class="logo">🚀 ROCKET</a>
+
+        <ul class="nav-links">
+
+
+            {% if user.is_authenticated %}
+            <li><a href="{% url 'dashboard' %}">Tableau de bord</a></li>
+            <!-- ADMIN: Sees Everything -->
+            {% if user.is_superuser or user.role == 'ADMIN' %}
+            <li><a href="{% url 'expedition' %}">Expéditions</a></li>
+            <li><a href="{% url 'facturation' %}">Facturation</a></li>
+            <li><a href="{% url 'incidents' %}">Incidents</a></li>
+            <li><a href="{% url 'tournees' %}"> Tournées</a></li>
+            <li><a href="{% url 'reclamation' %}">Réclamations</a></li>
+            <li><a href="{% url 'database' %}" style="color:var(--primary)">Database</a></li>
+
+            <!-- CLIENT: Sees Shipments, Invoices, Claims -->
+            {% elif user.role == 'CLIENT' %}
+            <li><a href="{% url 'expedition' %}">Mes Expéditions</a></li>
+            <li><a href="{% url 'facturation' %}">Mes Factures</a></li>
+            <li><a href="{% url 'reclamation' %}">Réclamations</a></li>
+            <!-- CHAUFFEUR: Sees Deliveries, Incidents -->
+            {% elif user.role == 'CHAUFFEUR' %}
+            <li><a href="{% url 'expedition' %}">Mes Livraisons</a></li>
+            <li><a href="{% url 'incidents' %}">Signaler Incident</a></li>
+            <li><a href="{% url 'tournees' %}"> Tournées</a></li>
+            {% endif %}
+            {% endif %}
+        </ul>
+        <div class="user-section">
+            {% if user.is_authenticated %}
+            <span style="font-size: 13px; color: #aaa;">
+                {{ user.username }} ({{ user.role }})
+            </span>
+            <form action="{% url 'logout' %}" method="post" style="display:inline;">
+                {% csrf_token %}
+                <button type="submit" class="btn-logout"
+                    style="background:transparent; cursor:pointer;">Déconnexion</button>
+            </form>
+            {% else %}
+            <a href="{% url 'login' %}" style="color:white; font-size:13px; margin-right:15px;">Connexion</a>
+            <a href="{% url 'signin' %}" class="btn-logout" style="border-color:#f4c430; color:#f4c430;">Inscription</a>
+            {% endif %}
+        </div>
+    </nav>
+
+    <main class="main-content">
+        {% block content %}
+        {% endblock %}
+    </main>
+
+    {% block extra_js %}{% endblock %}
+</body>
+
+</html>

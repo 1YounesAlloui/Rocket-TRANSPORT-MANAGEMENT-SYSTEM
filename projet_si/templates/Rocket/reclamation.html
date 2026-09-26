@@ -1,0 +1,283 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Gestion des Réclamations | CRM Logistique{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Structure Styles */
+    .container-crm {
+        max-width: 1400px;
+        margin: 0 auto;
+        display: grid;
+        grid-template-columns: 350px 1fr;
+        gap: 25px;
+    }
+
+    .panel {
+        background: var(--card-bg);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 20px;
+        height: fit-content;
+    }
+
+    h2 {
+        color: var(--primary);
+        font-size: 1.2rem;
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        border-bottom: 1px solid var(--border);
+        padding-bottom: 10px;
+    }
+
+    .form-group {
+        margin-bottom: 15px;
+    }
+
+    label {
+        display: block;
+        font-size: 12px;
+        color: #aaa;
+        margin-bottom: 5px;
+    }
+
+    input,
+    select,
+    textarea {
+        width: 100%;
+        padding: 10px;
+        background: rgba(0, 0, 0, 0.2);
+        border: 1px solid var(--border);
+        color: white;
+        border-radius: 6px;
+        box-sizing: border-box;
+    }
+
+    /* KPI Section */
+    .kpi-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 15px;
+        margin-bottom: 25px;
+    }
+
+    .kpi-card {
+        background: rgba(0, 0, 0, 0.2);
+        padding: 15px;
+        border-radius: 8px;
+        text-align: center;
+        border-bottom: 3px solid var(--primary);
+    }
+
+    .kpi-card h3 {
+        font-size: 24px;
+        margin: 5px 0;
+        color: var(--primary);
+    }
+
+    .kpi-card p {
+        font-size: 13px;
+        color: #aaa;
+        margin: 0;
+    }
+
+    /* Table Styles */
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 10px;
+    }
+
+    th {
+        text-align: left;
+        padding: 12px;
+        background: rgba(0, 0, 0, 0.3);
+        color: var(--primary);
+        font-size: 13px;
+    }
+
+    td {
+        padding: 12px;
+        border-bottom: 1px solid var(--border);
+        font-size: 14px;
+    }
+
+    /* Status Badges */
+    .status-badge {
+        padding: 4px 10px;
+        border-radius: 20px;
+        font-size: 10px;
+        font-weight: bold;
+        text-transform: uppercase;
+    }
+
+    .st-new {
+        background: #3498db;
+        color: white;
+    }
+
+    .st-progress {
+        background: #f39c12;
+        color: white;
+    }
+
+    .st-resolved {
+        background: #2ecc71;
+        color: white;
+    }
+
+    .st-cancelled {
+        background: #e74c3c;
+        color: white;
+    }
+
+    .btn-submit {
+        background: var(--primary);
+        color: #0f2a44;
+        border: none;
+        padding: 12px;
+        border-radius: 6px;
+        font-weight: bold;
+        cursor: pointer;
+        width: 100%;
+        transition: 0.3s;
+    }
+
+    .btn-submit:hover {
+        background: #e0b22a;
+        transform: translateY(-2px);
+    }
+
+    .btn-action {
+        color: #2ecc71;
+        background: none;
+        border: none;
+        cursor: pointer;
+        font-weight: bold;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-crm">
+    <div class="panel">
+        <h2>📥 Déposer une plainte</h2>
+        <form method="POST">
+            {% csrf_token %}
+            <div class="form-group">
+                <label>Client émetteur</label>
+                <select name="client_id" required>
+                    <option value="">-- Sélectionner le client --</option>
+                    {% for client in clients %}
+                    <option value="{{ client.id }}">{{ client.nom }} {{ client.prenom }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Objet de la réclamation</label>
+                <input type="text" name="objet" placeholder="Ex: Retard livraison EXP-102" required>
+            </div>
+            <div class="form-group">
+                <label>Expéditions concernées (Maintenez Ctrl)</label>
+                <select name="expeditions" multiple style="height: 100px;">
+                    {% for exp in expeditions %}
+                    <option value="{{ exp.id }}">{{ exp.numero_expedition }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Facture liée (facultatif)</label>
+                <select name="facture_id">
+                    <option value="">-- Aucune --</option>
+                    {% for fac in factures %}
+                    <option value="{{ fac.id }}">Facture #{{ fac.id }} ({{ fac.client.nom }})</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Attribuer à l'agent</label>
+                <select name="assigned_to_id">
+                    <option value="">-- Non attribué --</option>
+                    {% for agent in agents %}
+                    <option value="{{ agent.id }}">{{ agent.username }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Description détaillée</label>
+                <textarea name="commentaire" rows="5" placeholder="Expliquez la situation..." required></textarea>
+            </div>
+            <button type="submit" name="create_reclamation" class="btn-submit">🚀 Enregistrer le dossier</button>
+        </form>
+    </div>
+
+    <div class="panel">
+        <div class="kpi-grid">
+            <div class="kpi-card">
+                <p>Réclamations actives</p>
+                <h3>{{ active_reclamations }}</h3>
+            </div>
+            <div class="kpi-card">
+                <p>Taux de Résolution</p>
+                <h3>{{ resolution_rate }}%</h3>
+            </div>
+            <div class="kpi-card">
+                <p>Satisfaction Client</p>
+                <h3>{{ satisfaction_score }}%</h3>
+            </div>
+        </div>
+
+        <h2>📜 Suivi des dossiers</h2>
+        <table id="complaintTable">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Client</th>
+                    <th>Objet</th>
+                    <th>Agent</th>
+                    <th>Statut</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for rec in reclamations %}
+                <tr>
+                    <td>{{ rec.date|date:"d/m/Y" }}</td>
+                    <td>{{ rec.client.nom }}</td>
+                    <td>{{ rec.objet }}</td>
+                    <td><small>{{ rec.assigned_to.username|default:"Non assigné" }}</small></td>
+                    <td>
+                        <span class="status-badge 
+                            {% if rec.statut == 'EN_COURS' %}st-progress
+                            {% elif rec.statut == 'RESOLUE' %}st-resolved
+                            {% else %}st-cancelled{% endif %}">
+                            {{ rec.get_statut_display }}
+                        </span>
+                    </td>
+                    <td>
+                        {% if rec.statut == 'EN_COURS' %}
+                        <form method="POST" style="display:inline;">
+                            {% csrf_token %}
+                            <input type="hidden" name="resolve_id" value="{{ rec.id }}">
+                            <button type="submit" class="btn-action">✅ Résoudre</button>
+                        </form>
+                        {% else %}
+                        <span style="color:#777; font-size:12px;">Dossier clos</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="5" style="text-align:center; padding: 20px; color:#777;">
+                        Aucun dossier en cours.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

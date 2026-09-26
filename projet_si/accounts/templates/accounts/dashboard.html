@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>Tableau de Bord - Statistiques</h2>
+<div style="display: flex; gap: 20px;">
+    <div style="border: 1px solid #ccc; padding: 20px;">
+        <h3>Chiffre d'Affaires</h3>
+        <p>{{ total_ca }} DZD</p>
+    </div>
+    <div style="border: 1px solid #ccc; padding: 20px;">
+        <h3>Expéditions Totales</h3>
+        <p>{{ nb_expeditions }}</p>
+    </div>
+</div>
+
+<h3>Top Clients</h3>
+<table>
+    <tr><th>Client</th><th>Total Dépensé</th></tr>
+    {% for client in top_clients %}
+    <tr>
+        <td>{{ client.nom }} {{ client.prenom }}</td>
+        <td>{{ client.total_depense }} DZD</td>
+    </tr>
+    {% endfor %}
+</table>
+{% endblock %}

@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>Journal des Factures</h2>
+<table border="1">
+    <thead>
+        <tr>
+            <th>ID</th><th>Client</th><th>Montant TTC</th><th>Statut</th><th>Action</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for f in factures %}
+        <tr>
+            <td>{{ f.id }}</td>
+            <td>{{ f.client.nom }}</td>
+            <td>{{ f.montant_TTC }}</td>
+            <td>{{ f.statut }}</td>
+            <td>
+                <form action="{% url 'enregistrer_paiement' f.id %}" method="POST">
+                    {% csrf_token %}
+                    <input type="number" name="montant" placeholder="Montant">
+                    <button type="submit">Payer</button>
+                </form>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

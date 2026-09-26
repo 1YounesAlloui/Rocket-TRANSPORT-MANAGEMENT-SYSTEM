@@ -1,0 +1,286 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Facturation | Rocket{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Vos styles existants sont conservés */
+    .grid-container {
+        display: grid;
+        grid-template-columns: 1fr 1.5fr;
+        gap: 20px;
+        max-width: 1300px;
+        margin: 0 auto;
+    }
+
+    .panel {
+        background: var(--card-bg);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 20px;
+    }
+
+    h2 {
+        color: var(--primary);
+        border-bottom: 1px solid var(--border);
+        padding-bottom: 10px;
+        margin-bottom: 20px;
+    }
+
+    .form-group {
+        margin-bottom: 15px;
+    }
+
+    label {
+        display: block;
+        font-size: 12px;
+        color: #aaa;
+        margin-bottom: 5px;
+    }
+
+    input,
+    select {
+        width: 100%;
+        padding: 10px;
+        background: rgba(0, 0, 0, 0.2);
+        border: 1px solid var(--border);
+        color: white;
+        border-radius: 6px;
+        box-sizing: border-box;
+    }
+
+    .summary-box {
+        background: rgba(0, 0, 0, 0.3);
+        padding: 15px;
+        border-radius: 8px;
+        margin: 15px 0;
+    }
+
+    .summary-line {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 8px;
+    }
+
+    .total-ttc {
+        font-size: 20px;
+        font-weight: bold;
+        color: var(--primary);
+        border-top: 1px solid var(--border);
+        padding-top: 10px;
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 14px;
+    }
+
+    th {
+        text-align: left;
+        padding: 10px;
+        background: rgba(0, 0, 0, 0.2);
+        color: var(--primary);
+    }
+
+    td {
+        padding: 10px;
+        border-bottom: 1px solid var(--border);
+    }
+
+    .btn-pay {
+        background: var(--primary);
+        color: #0f2a44;
+        width: 100%;
+        margin-top: 10px;
+        font-weight: bold;
+        padding: 12px;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+    }
+
+    .status-badge {
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 10px;
+        font-weight: bold;
+    }
+
+    .status-payee {
+        background: #2ecc71;
+        color: white;
+    }
+
+    .status-partiel {
+        background: #f39c12;
+        color: white;
+    }
+
+    .status-impayee {
+        background: #e74c3c;
+        color: white;
+    }
+
+    @media print {
+
+        .panel:first-child,
+        .btn-print,
+        .btn-delete,
+        .actions-td {
+            display: none !important;
+        }
+
+        #printableArea {
+            width: 100%;
+            visibility: visible;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="grid-container">
+    <div class="panel">
+        <h2>🧾 Nouvelle Facture</h2>
+        <form method="POST">
+            {% csrf_token %}
+
+            <div class="form-group">
+                <label>Client</label>
+                <select name="client_id" id="clientSelect" required>
+                    <option value="">-- Choisir un client --</option>
+                    {% for client in clients %}
+                    <option value="{{ client.id }}" data-solde="{{ client.solde }}">
+                        {{ client.nom }} {{ client.prenom }} (Solde: {{ client.solde }} DA)
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Montant Hors Taxe (HT) Manuel ou calculé</label>
+                <input type="number" name="montant_ht" id="inputHT" step="0.01" value="0" required>
+            </div>
+
+            <div class="summary-box">
+                <div class="summary-line">
+                    <span>TVA (19%)</span>
+                    <span id="displayTVA">0,00 DA</span>
+                </div>
+                <div class="summary-line total-ttc">
+                    <span>Total TTC</span>
+                    <span id="displayTTC">0,00 DA</span>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Montant Versé (Paiement Immédiat)</label>
+                <input type="number" name="montant_paye" id="inputPaid" step="0.01" value="0">
+            </div>
+
+            <div class="summary-box" style="margin-top: 10px;">
+                <div class="summary-line">
+                    <span>Montant Restant (MR = TTC - MV)</span>
+                    <span id="displayReste" style="font-weight:bold; color:#f39c12;">0,00 DA</span>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Mode de Paiement</label>
+                <select name="mode_paiement">
+                    <option value="Espèces">Espèces</option>
+                    <option value="Virement">Virement</option>
+                    <option value="Chèque">Chèque</option>
+                </select>
+            </div>
+
+            <button type="submit" class="btn-pay">🚀 Enregistrer la Facture</button>
+        </form>
+    </div>
+
+    <div class="panel" id="printableArea">
+        <h2>📜 Journal des Factures</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Réf/Date</th>
+                    <th>Client</th>
+                    <th>TTC</th>
+                    <th>MV</th>
+                    <th>MR</th>
+                    <th>Statut</th>
+                    <th class="actions-td">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for facture in factures %}
+                <tr>
+                    <td>#{{ facture.id }}<br><small>{{ facture.date_facture|date:"d/m/Y" }}</small></td>
+                    <td>{{ facture.client.nom }}</td>
+                    <td><strong>{{ facture.montant_TTC }} DA</strong></td>
+                    <td style="color: #2ecc71;">{{ facture.montant_verse|floatformat:2 }} DA</td>
+                    <td style="color: #f39c12;">{{ facture.montant_restant|floatformat:2 }} DA</td>
+                    <td>
+                        <span class="status-badge 
+                            {% if facture.statut == 'PAYEE' %}status-payee
+                            {% elif facture.statut == 'PARTIEL' %}status-partiel
+                            {% else %}status-impayee{% endif %}">
+                            {{ facture.get_statut_display }}
+                        </span>
+                    </td>
+                    <td class="actions-td">
+                        <form method="POST" style="display:inline;">
+                            {% csrf_token %}
+                            <input type="hidden" name="delete_facture_id" value="{{ facture.id }}">
+                            <button type="submit" style="background:none; border:none; cursor:pointer;"
+                                onclick="return confirm('Supprimer?')">🗑️</button>
+                        </form>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="7" style="text-align:center;">Aucune facture.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+
+
+<script>
+    const inputHT = document.getElementById('inputHT');
+    const inputPaid = document.getElementById('inputPaid');
+    const displayTVA = document.getElementById('displayTVA');
+    const displayTTC = document.getElementById('displayTTC');
+    const displayReste = document.getElementById('displayReste');
+
+    function updateCalculations() {
+        const ht = parseFloat(inputHT.value) || 0;
+        const tva = ht * 0.19;
+        const ttc = ht + tva;
+        const paid = parseFloat(inputPaid.value) || 0;
+        const reste = Math.max(0, ttc - paid); // MR = TTC - MV
+
+        displayTVA.innerText = tva.toFixed(2) + ' DA';
+        displayTTC.innerText = ttc.toFixed(2) + ' DA';
+        displayReste.innerText = reste.toFixed(2) + ' DA';
+
+        // Change color based on payment status
+        if (reste === 0 && ttc > 0) {
+            displayReste.style.color = '#2ecc71'; // Green if fully paid
+        } else if (reste > 0) {
+            displayReste.style.color = '#f39c12'; // Orange if remaining
+        } else {
+            displayReste.style.color = '#aaa'; // Gray if no invoice yet
+        }
+    }
+
+    inputHT.addEventListener('input', updateCalculations);
+    inputPaid.addEventListener('input', updateCalculations);
+    updateCalculations();
+</script>
+{% endblock %}

@@ -1,0 +1,319 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Gestion des Expéditions | Rocket{% endblock %}
+
+{% block extra_css %}
+<style>
+    .header-exp {
+        margin-bottom: 30px;
+        border-left: 5px solid var(--primary);
+        padding-left: 20px;
+    }
+
+    .shipping-card {
+        background: var(--card-bg);
+        border-radius: 15px;
+        padding: 30px;
+        border: 1px solid var(--border);
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 20px;
+        margin-bottom: 40px;
+    }
+
+    .form-group {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .form-group.full {
+        grid-column: span 2;
+    }
+
+    label {
+        font-size: 0.85rem;
+        color: #aaa;
+        font-weight: 600;
+        text-transform: uppercase;
+    }
+
+    input,
+    select,
+    textarea {
+        padding: 12px;
+        border-radius: 8px;
+        border: 1px solid var(--border);
+        background: rgba(0, 0, 0, 0.3);
+        color: white;
+        transition: 0.3s;
+    }
+
+    input:focus,
+    select:focus,
+    textarea:focus {
+        border-color: var(--primary);
+        background: rgba(0, 0, 0, 0.5);
+        outline: none;
+    }
+
+    /* Zone de Prix */
+    .price-summary {
+        grid-column: span 2;
+        background: rgba(244, 196, 48, 0.05);
+        padding: 20px;
+        border-radius: 12px;
+        border: 1px dashed var(--primary);
+        text-align: center;
+    }
+
+    .total-amount {
+        font-size: 2.2rem;
+        font-weight: 800;
+        color: var(--primary);
+        margin: 5px 0;
+    }
+
+    /* Buttons */
+    .btn-submit {
+        grid-column: span 2;
+        background: var(--primary);
+        color: #0f2a44;
+        padding: 16px;
+        border: none;
+        border-radius: 8px;
+        font-weight: 800;
+        cursor: pointer;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+
+    /* Table Styles */
+    .exp-table-container {
+        background: var(--card-bg);
+        border-radius: 15px;
+        padding: 20px;
+        overflow-x: auto;
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 10px;
+    }
+
+    th {
+        text-align: left;
+        color: var(--primary);
+        font-size: 0.8rem;
+        text-transform: uppercase;
+        padding: 15px;
+        border-bottom: 1px solid var(--border);
+    }
+
+    td {
+        padding: 15px;
+        border-bottom: 1px solid var(--border);
+        font-size: 0.9rem;
+    }
+
+    .status-badge {
+        padding: 4px 10px;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: bold;
+        background: rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container" style="padding: 20px 40px;">
+    <div class="header-exp">
+        <h1>📦 Gestion des Expéditions</h1>
+        <p style="color: #aaa;">Enregistrez une nouvelle livraison ou suivez vos colis en temps réel.</p>
+    </div>
+
+    {% if messages %}
+    <div class="messages-container" style="margin-bottom: 20px;">
+        {% for message in messages %}
+        <div class="msg {% if message.tags == 'success' %}msg-success{% else %}msg-error{% endif %}">
+            {{ message }}
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <form method="POST" class="shipping-card">
+        {% csrf_token %}
+
+        <div class="form-group">
+            <label>Numéro d'expédition (Optionnel)</label>
+            <input type="text" name="numero_expedition" placeholder="Auto-généré si vide">
+        </div>
+
+        <div class="form-group">
+            <label>Client</label>
+            <select name="client" required>
+                <option value="">Sélectionnez un client...</option>
+                {% for c in clients %}
+                <option value="{{ c.id }}">{{ c.nom }} {{ c.prenom }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label>Destination</label>
+            <select name="destination" required>
+                <option value="">Sélectionnez une destination...</option>
+                {% for dest in destinations %}
+                <option value="{{ dest.id }}" data-base="{{ dest.tarif_base|default:0 }}"
+                    data-poids="{{ dest.tarif_poids|default:0 }}" data-volume="{{ dest.tarif_volume|default:0 }}">
+                    {{ dest.ville }} - {{ dest.pays }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label>Type de Service</label>
+            <select name="type_service" id="type_service" required>
+                {% for srv in services %}
+                <option value="{{ srv.id }}">
+                    {% if srv.libelle == 'Standard' %}📦
+                    {% elif srv.libelle == 'Express' %}⚡
+                    {%elif srv.libelle == 'International' %}🌐
+                    {% endif %} {{ srv.libelle }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="form-group">
+            <label>Poids (kg)</label>
+            <input type="number" step="0.01" name="poids" required>
+        </div>
+
+        <div class="form-group">
+            <label>Volume (m³)</label>
+            <input type="number" step="0.01" name="volume" required>
+        </div>
+
+        <div class="form-group full">
+            <label>Description du colis</label>
+            <textarea name="description" rows="2" placeholder="Contenu du colis..."></textarea>
+        </div>
+
+        <div class="price-summary">
+            <p style="margin: 0; font-size: 0.9rem;">Estimation du coût total</p>
+            <div class="total-amount">Calculé à l'enregistrement</div>
+            <p style="margin: 0; font-size: 0.7rem; color: #888;">Formule: Base + (Poids × Rate) + (Volume × Rate)</p>
+        </div>
+
+        <button type="submit" class="btn-submit">🚀 Enregistrer l'expédition</button>
+    </form>
+
+    <div class="header-exp" style="border-color: #3498db;">
+        <h2>📋 Liste des Expéditions</h2>
+    </div>
+
+    <div class="exp-table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>Réf</th>
+                    <th>Date</th>
+                    <th>Client</th>
+                    <th>Destination</th>
+                    <th>Statut</th>
+                    <th>Montant TTC</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for exp in expeditions %}
+                <tr>
+                    <td style="font-weight: bold; color: var(--primary);">{{ exp.numero_expedition }}</td>
+                    <td>{{ exp.date_creation|date:"d/m/Y" }}</td>
+                    <td>{{ exp.client.nom }}</td>
+                    <td>{{ exp.destination.ville }}</td>
+                    <td>
+                        <span class="status-badge">{{ exp.get_statut_display }}</span>
+                    </td>
+                    <td>{{ exp.montant_total }} DA</td>
+                    <td class="actions-td">
+                        <button onclick="window.print()" class="btn-print">🖨️ PDF</button>
+
+                        <form method="POST" style="display:inline;">
+                            {% csrf_token %}
+                            <input type="hidden" name="delete_expedition_id" value="{{ exp.id }}">
+                            <button type="submit" class="btn-delete"
+                                onclick="return confirm('Supprimer cette expédition ?')">🗑️</button>
+                        </form>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" style="text-align: center; color: #666;">Aucune expédition trouvée.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{{ tarifs_json|json_script:"destinationData" }}
+
+
+
+<script>
+
+    // Form Elements
+    const form = document.querySelector('form.shipping-card');
+    const poidsInput = document.querySelector('input[name="poids"]');
+    const volumeInput = document.querySelector('input[name="volume"]');
+    const destSelect = document.querySelector('select[name="destination"]');
+    const srvSelect = document.querySelector('select[name="type_service"]');
+    const priceDisplay = document.querySelector('.total-amount');
+
+
+    const destinationData = JSON.parse(
+        document.getElementById('destinationData').textContent
+    );
+
+    function calculatePrice() {
+        const poids = parseFloat(poidsInput.value) || 0;
+        const volume = parseFloat(volumeInput.value) || 0;
+        const destId = destSelect.value;
+        const srvValue = srvSelect.value;
+
+        if (!destId || !srvValue) {
+            priceDisplay.textContent = 'Calculé à l\'enregistrement';
+            return;
+        }
+
+        const key = `${destId}_${srvValue}`;
+        const data = destinationData[key];
+
+        // Fallback to destination defaults if no specific tarif is found
+        const selectedOption = destSelect.options[destSelect.selectedIndex];
+        const base = data ? data.base : (parseFloat(selectedOption.getAttribute('data-base')) || 0);
+        const ratePoids = data ? data.poids : (parseFloat(selectedOption.getAttribute('data-poids')) || 0);
+        const rateVol = data ? data.volume : (parseFloat(selectedOption.getAttribute('data-volume')) || 0);
+
+        const total = base + (poids * ratePoids) + (volume * rateVol);
+        priceDisplay.textContent = total.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' DA';
+    }
+
+    // Event listeners for real-time updates
+    poidsInput.addEventListener('input', calculatePrice);
+    volumeInput.addEventListener('input', calculatePrice);
+    destSelect.addEventListener('change', calculatePrice);
+    srvSelect.addEventListener('change', calculatePrice);
+
+
+    // Initial calculation in case fields are pre-filled
+    calculatePrice();
+</script>
+
+{% endblock %}

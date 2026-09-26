@@ -1,0 +1,154 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Accueil | ROCKET Transport{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Hero Section */
+    .hero-container { 
+        display: grid; 
+        grid-template-columns: 1fr 1fr; 
+        align-items: center; 
+        min-height: 80vh; 
+        gap: 40px;
+    }
+    
+    .content h1 { font-size: 3.5rem; line-height: 1.1; margin-bottom: 20px; }
+    .content h1 span { color: var(--primary); }
+    .content p { color: #aaa; margin-bottom: 30px; max-width: 500px; line-height: 1.6; }
+
+    .features {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 15px;
+      margin-bottom: 40px;
+    }
+
+    .features div { font-size: 0.85rem; display: flex; align-items: center; gap: 10px; }
+    .features div::before { content: "✓"; color: var(--primary); font-weight: bold; }
+
+    /* Buttons */
+    .cta { display: flex; gap: 20px; }
+    .btn {
+      padding: 15px 30px;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      transition: 0.3s;
+      text-decoration: none;
+      text-align: center;
+    }
+    .btn-primary { background: var(--primary); color: #0f2a44; }
+    .btn-secondary { background: transparent; color: white; border: 1px solid var(--border); }
+    .btn:hover { transform: translateY(-3px); box-shadow: 0 5px 15px rgba(244, 196, 48, 0.2); }
+
+    /* Animation */
+    .visual { text-align: center; font-size: 12rem; animation: float 3s ease-in-out infinite; user-select: none; }
+    @keyframes float {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-20px); }
+    }
+
+    /* Services Section */
+    .section { padding: 80px 0; text-align: center; }
+    .section h2 { margin-bottom: 50px; font-size: 2.2rem; position: relative; display: inline-block; }
+    .section h2::after { content: ''; width: 50%; height: 3px; background: var(--primary); position: absolute; bottom: -10px; left: 25%; }
+    
+    .cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 30px; margin-top: 40px; }
+    .card {
+      background: var(--card-bg);
+      padding: 40px;
+      border-radius: 15px;
+      border: 1px solid var(--border);
+      transition: 0.4s;
+      cursor: default;
+    }
+    .card:hover { border-color: var(--primary); transform: scale(1.02); background: rgba(255,255,255,0.08); }
+    .card h3 { color: var(--primary); margin: 15px 0; font-size: 1.4rem; }
+    .card p { font-size: 0.95rem; color: #ccc; }
+
+    /* Footer */
+    .footer { 
+        background: rgba(0,0,0,0.4); 
+        padding: 60px 5% 20px; 
+        border-top: 1px solid var(--border); 
+        margin-top: 80px; 
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+  <div class="hero-container">
+    <section class="content">
+      <h1>Logistique <span>Transport & Livraison</span></h1>
+      <h2>Launch your shipments with Rocket.</h2>
+      <p>
+        La plateforme Rocket centralise vos opérations : gestion des chauffeurs, calcul automatique des tarifs, 
+        suivi des incidents et facturation sécurisée en un clic.
+      </p>
+
+      <div class="features">
+        <div>Gestion Flotte & Chauffeurs</div>
+        <div>Expéditions Internationales</div>
+        <div>Facturation Auto (TVA 19%)</div>
+        <div>Analyses Prédictives</div>
+      </div>
+
+      <div class="cta">
+        {% if not user.is_authenticated %}
+            <a href="{% url 'login' %}" class="btn btn-primary">Accès Personnel</a>
+            <a href="{% url 'signin' %}" class="btn btn-secondary">Créer un compte</a>
+        {% else %}
+            <a href="{% url 'dashboard' %}" class="btn btn-primary">Aller au Tableau de Bord</a>
+        {% endif %}
+      </div>
+    </section>
+
+    <section class="visual">
+      🚚
+    </section>
+  </div>
+
+  <section class="section" id="services">
+    <h2>Nos Services d'Expédition</h2>
+    
+    <div class="cards">
+      <div class="card">
+        <div style="font-size: 3rem;">📦</div>
+        <h3>Standard</h3>
+        <p>Envois nationaux économiques avec suivi d'étape en temps réel.</p>
+      </div>
+      
+      <div class="card">
+        <div style="font-size: 3rem;">⚡</div>
+        <h3>Express</h3>
+        <p>Priorité maximale pour vos colis urgents. Livraison garantie sous 24h.</p>
+      </div>
+      
+      <div class="card">
+        <div style="font-size: 3rem;">🌍</div>
+        <h3>International</h3>
+        <p>Gestion douanière simplifiée et tarifs de zone automatisés.</p>
+      </div>
+    </div>
+  </section>
+
+  <footer class="footer">
+    <div style="display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 50px; max-width: 1200px; margin: auto;">
+      <div>
+        <h3 style="color: var(--primary);">ROCKET System</h3>
+        <p>Launch your shipments with Rocket.</p>
+      </div>
+      <div>
+        <h4 style="margin-bottom: 15px;">Contact</h4>
+        <p style="font-size: 0.9rem; color: #aaa;">📧 support@rocket-logistics.dz</p>
+        <p style="font-size: 0.9rem; color: #aaa;">📍 Algiers, Algeria</p>
+      </div>
+    </div>
+    <div style="text-align: center; margin-top: 50px; font-size: 0.8rem; color: #666; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 20px;">
+        © 2025 ROCKET Transport System 
+    </div>
+  </footer>
+{% endblock %}

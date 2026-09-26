@@ -1,0 +1,197 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inscription | Logistique Pro</title>
+    <style>
+        :root { 
+            --primary: #f4c430; 
+            --primary-hover: #e0b22a;
+            --bg: #0f2a44; 
+            --card-bg: rgba(255, 255, 255, 0.07);
+            --border: rgba(255, 255, 255, 0.15); 
+            --text-muted: #a0aec0;
+        }
+
+        body { 
+            background: var(--bg); 
+            color: white; 
+            font-family: 'Inter', 'Segoe UI', system-ui, sans-serif; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            min-height: 100vh; 
+            margin: 0; 
+            background: radial-gradient(circle at top right, #1a4571, #0f2a44);
+        }
+
+        .auth-card { 
+            background: var(--card-bg); 
+            padding: 40px; 
+            border-radius: 20px; 
+            border: 1px solid var(--border); 
+            width: 100%;
+            max-width: 480px; 
+            backdrop-filter: blur(12px);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            margin: 20px;
+            animation: fadeIn 0.6s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        h2 { color: white; text-align: center; margin-bottom: 25px; font-weight: 700; }
+
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .form-group { margin-bottom: 20px; }
+        
+        label { 
+            display: block; 
+            font-size: 0.75rem; 
+            color: var(--text-muted); 
+            margin-bottom: 8px; 
+            font-weight: 700; 
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        input, select { 
+            width: 100%; 
+            padding: 12px; 
+            background: rgba(15, 42, 68, 0.5); 
+            border: 1px solid var(--border); 
+            border-radius: 10px; 
+            color: white; 
+            box-sizing: border-box; 
+            font-size: 0.95rem;
+            transition: all 0.2s ease;
+        }
+
+        input:focus, select:focus { 
+            border-color: var(--primary); 
+            outline: none; 
+            background: rgba(15, 42, 68, 0.8);
+            box-shadow: 0 0 0 3px rgba(244, 196, 48, 0.1);
+        }
+
+        #dynamicField { 
+            border-left: 3px solid var(--primary); 
+            padding: 15px; 
+            margin-bottom: 20px; 
+            background: rgba(244, 196, 48, 0.05); 
+            border-radius: 0 10px 10px 0;
+        }
+
+        .btn { 
+            width: 100%; 
+            padding: 14px; 
+            background: var(--primary); 
+            border: none; 
+            border-radius: 10px; 
+            font-weight: 800; 
+            cursor: pointer; 
+            color: #0f2a44;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            transition: 0.3s;
+        }
+
+        .btn:hover { background: var(--primary-hover); transform: translateY(-2px); }
+
+        .footer-link { text-align: center; margin-top: 25px; font-size: 0.9rem; color: var(--text-muted); }
+        .footer-link a { color: var(--primary); text-decoration: none; font-weight: 600; }
+
+        .error-msg {
+            background: rgba(231, 76, 60, 0.2);
+            border-left: 4px solid #e74c3c;
+            color: #ff9999;
+            padding: 10px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            font-size: 0.85rem;
+        }
+    </style>
+</head>
+<body>
+
+<div class="auth-card">
+    <h2>📝 Créer un compte</h2>
+    
+    {% if messages %}
+        {% for message in messages %}
+            <div class="error-msg">⚠️ {{ message }}</div>
+        {% endfor %}
+    {% endif %}
+
+    <form method="POST" action="{% url 'signin' %}" id="regForm">
+        {% csrf_token %}
+        
+        <div class="form-group">
+            <label>Type de profil</label>
+            <select name="role" id="regRole" onchange="updateFields()">
+                <option value="client">📦 Client (Entreprise)</option>
+                <option value="chauffeur">🚛 Chauffeur / Prestataire</option>
+            </select>
+        </div>
+
+        <div class="form-grid">
+            <div class="form-group"><label>Nom</label><input type="text" name="last_name" required></div>
+            <div class="form-group"><label>Prénom</label><input type="text" name="first_name" required></div>
+        </div>
+
+        <div id="dynamicField">
+            <label id="dynLabel">Nom de l'Entreprise</label>
+            <input type="text" id="dynInput" name="extra_info" placeholder="Ex: Sarl Import-Export">
+        </div>
+
+        <div class="form-group">
+            <label>E-mail Professionnel</label>
+            <input type="email" name="email" required>
+        </div>
+
+        <div class="form-grid">
+            <div class="form-group"><label>Mot de passe</label><input type="password" id="p1" name="password" required></div>
+            <div class="form-group"><label>Confirmation</label><input type="password" id="p2" required></div>
+        </div>
+
+        <button type="submit" class="btn">Finaliser l'inscription</button>
+    </form>
+    
+    <div class="footer-link">
+        Déjà membre ? <a href="{% url 'login' %}">Connectez-vous</a>
+        <a href="{% url 'index' %}">| return</a>
+    </div>
+</div>
+
+<script>
+    function updateFields() {
+        const role = document.getElementById('regRole').value;
+        const label = document.getElementById('dynLabel');
+        const input = document.getElementById('dynInput');
+
+        if(role === 'chauffeur') {
+            label.innerText = "Numéro de Permis / Matricule";
+            input.placeholder = "Ex: 22/05/12345";
+        } 
+        else{
+            label.innerText = "Nom de l'Entreprise";
+            input.placeholder = "Ex: Sarl Import-Export";
+        }
+    }
+
+ 
+
+    document.getElementById('regForm').onsubmit = function(e) {
+        if(document.getElementById('p1').value !== document.getElementById('p2').value) {
+            e.preventDefault();
+            alert("Les mots de passe ne correspondent pas !");
+        }
+    };
+</script>
+</body>
+</html>
