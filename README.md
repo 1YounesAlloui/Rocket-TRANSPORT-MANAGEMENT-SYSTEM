@@ -19,9 +19,7 @@
 - [Structure du Projet](#-structure-du-projet)
 - [Guide d'Installation & Démarrage Rapide](#-guide-dinstallation--démarrage-rapide)
 - [Configuration de l'Environnement](#-configuration-de-lenvironnement)
-- [Initialisation des Données & Utilisateurs Démo](#-initialisation-des-données--utilisateurs-démo)
 - [Déploiement & Sécurité](#-déploiement--sécurité)
-- [Équipe & Contribution](#-équipe--contribution)
 - [Licence](#-licence)
 
 ---
@@ -263,57 +261,6 @@ L'application est immédiatement accessible sur :
 
 ---
 
-## 🧪 Initialisation des Données & Utilisateurs Démo
-
-Pour injecter rapidement les types de services et des destinations tests, lancez la console Django :
-
-```bash
-python manage.py shell
-```
-
-Copiez-collez ensuite ce bloc de code :
-
-```python
-from livraison.models import TypeService, Destination
-from accounts.models import Utilisateur
-
-# 1. Création des types de services
-TypeService.objects.get_or_create(libelle="Standard")
-TypeService.objects.get_or_create(libelle="Express")
-TypeService.objects.get_or_create(libelle="International")
-
-# 2. Création des destinations
-Destination.objects.get_or_create(
-    ville="Alger", pays="Algérie", zone_geographique="Centre",
-    tarif_base=1000, tarif_poids=50, tarif_volume=100
-)
-Destination.objects.get_or_create(
-    ville="Oran", pays="Algérie", zone_geographique="Ouest",
-    tarif_base=1200, tarif_poids=60, tarif_volume=120
-)
-Destination.objects.get_or_create(
-    ville="Constantine", pays="Algérie", zone_geographique="Est",
-    tarif_base=1150, tarif_poids=55, tarif_volume=110
-)
-
-# 3. Comptes de démonstration avec rôles RBAC
-# Compte Client
-if not Utilisateur.objects.filter(username='client1').exists():
-    Utilisateur.objects.create_user(
-        username='client1', email='client1@rocket.com', password='password123', role='CLIENT'
-    )
-
-# Compte Chauffeur
-if not Utilisateur.objects.filter(username='driver1').exists():
-    Utilisateur.objects.create_user(
-        username='driver1', email='driver1@rocket.com', password='password123', role='CHAUFFEUR'
-    )
-
-print(" Données de démonstration chargées avec succès !")
-exit()
-```
-
----
 
 ## 🔒 Déploiement & Sécurité
 
@@ -327,20 +274,8 @@ Pour un déploiement en environnement de production, respectez les impératifs s
 
 ---
 
-## 👥 Équipe & Contribution
-
-Projet académique développé par l'**Équipe E20** :
-
-- **Younes Alloui**
-- **Mohamed Mansour**
-- **El Hassen Zakaria Gadouche**
-- **Malak Berkat**
-
-Consultez le rapport complet joint au dépôt : [`E20_rapport.pdf`](./E20_Alloui%20younes_Mansour%20Mohamed_Gadouche%20El%20Hassen%20Zakaria_berkat%20malak_rapport.pdf.pdf).
-
----
 
 ## 📜 Licence
 
 Ce projet a été réalisé à des fins académiques et pédagogiques.  
-Tous droits réservés © 2026 - **Équipe E20**.
+Tous droits réservés © 2026
